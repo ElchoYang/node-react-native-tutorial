@@ -35,13 +35,13 @@ function ScheduleItem({ task, onToggle, onPress }) {
       onPress={() => onPress && onPress(task)}
       activeOpacity={0.7}
     >
-      {/* 左侧：状态切换按钮 */}
+      {/* 左侧：分类色点 + 状态切换按钮 */}
       <TouchableOpacity onPress={() => onToggle && onToggle(task.id)} style={styles.checkWrapper}>
-        <Ionicons
-          name={isCompleted ? 'checkmark-circle' : 'ellipse-outline'}
-          size={22}
-          color={isCompleted ? '#34D399' : dotColor}
-        />
+        {isCompleted ? (
+          <Ionicons name="checkmark-circle" size={22} color="#34D399" />
+        ) : (
+          <View style={[styles.dot, { backgroundColor: dotColor }]} />
+        )}
       </TouchableOpacity>
 
       {/* 中间：内容区 */}
@@ -86,6 +86,15 @@ const styles = StyleSheet.create({
   },
   checkWrapper: {
     marginRight: 12,
+    width: 22,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   content: {
     flex: 1,

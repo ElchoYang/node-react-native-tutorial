@@ -32,6 +32,8 @@ function DateTabs({ dates = [], selectedDate = '', onSelect }) {
     >
       {dates.map((item, index) => {
         const isSelected = item.date === selectedDate;
+        // 第一项或月份与上一项不同时显示月份标签
+        const showMonth = index === 0 || dates[index - 1].month !== item.month;
 
         return (
           <TouchableOpacity
@@ -42,12 +44,14 @@ function DateTabs({ dates = [], selectedDate = '', onSelect }) {
               isSelected && styles.tabItemActive,
             ]}
             onPress={() => onSelect && onSelect(item.date)}
+            activeOpacity={0.7}
           >
-            {/* 第一项显示月份标签 */}
-            {index === 0 ? (
-              <Text style={styles.monthLabel}>{item.month}</Text>
+            {showMonth ? (
+              <Text style={[styles.monthLabel, isSelected && styles.textWhite]}>
+                {item.month}
+              </Text>
             ) : (
-              <View />
+              <View style={styles.monthPlaceholder} />
             )}
             <Text
               style={[
@@ -65,6 +69,8 @@ function DateTabs({ dates = [], selectedDate = '', onSelect }) {
             >
               {item.day}
             </Text>
+            {/* 今天小圆点提示 */}
+            {item.isToday && !isSelected && <View style={styles.todayDot} />}
           </TouchableOpacity>
         );
       })}
@@ -93,6 +99,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999999',
     marginBottom: 2,
+  },
+  monthPlaceholder: {
+    height: 14,
+    marginBottom: 2,
+  },
+  todayDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#4080FF',
+    marginTop: 3,
   },
   weekDay: {
     fontSize: 13,

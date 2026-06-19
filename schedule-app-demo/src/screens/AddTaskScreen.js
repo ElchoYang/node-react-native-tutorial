@@ -78,7 +78,17 @@ export default function AddTaskScreen({ navigation, route }) {
         Alert.alert('成功', '任务保存成功！', [
           {
             text: '好的',
-            onPress: () => navigation.goBack(),
+            onPress: () => {
+              // 通过 navigate 回传 refreshAt 触发列表刷新
+              navigation.navigate({
+                name: 'MainTabs',
+                params: {
+                  screen: '任务',
+                  params: { refreshAt: Date.now() },
+                },
+                merge: true,
+              });
+            },
           },
         ]);
       } else {

@@ -20,6 +20,8 @@ import TabIcon from '../components/TabIcon';
 import TaskListScreen from '../screens/TaskListScreen';
 import AddTaskScreen from '../screens/AddTaskScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import CalendarScreen from '../screens/CalendarScreen';
+import ContactsScreen from '../screens/ContactsScreen';
 
 // ============ 底部 Tab 导航器 ============
 
@@ -69,8 +71,8 @@ function BottomTabNavigator() {
       })}
     >
       <Tab.Screen name="任务" component={TaskListScreen} />
-      <Tab.Screen name="日历" component={TaskListScreen} />
-      <Tab.Screen name="通讯" component={TaskListScreen} />
+      <Tab.Screen name="日历" component={CalendarScreen} />
+      <Tab.Screen name="通讯" component={ContactsScreen} />
       <Tab.Screen name="我的" component={ProfileScreen} />
     </Tab.Navigator>
   );

@@ -25,6 +25,16 @@ const MOCK_DELAY = 500;
 
 // ============ 模拟数据 ============
 
+/** 生成相对今天的日期字符串（YYYY-MM-DD） */
+const dateOffset = (offset = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const TODAY = dateOffset(0);
+const TOMORROW = dateOffset(1);
+
 let mockTasks = [
   {
     id: '1',
@@ -34,9 +44,9 @@ let mockTasks = [
     endTime: '10:00',
     location: '',
     note: '准备年终总结PPT',
-    date: '2026-06-13',
+    date: TODAY,
     status: 'pending',
-    createdAt: '2026-06-12T08:00:00Z',
+    createdAt: new Date().toISOString(),
   },
   {
     id: '2',
@@ -46,9 +56,9 @@ let mockTasks = [
     endTime: '12:00',
     location: '',
     note: '',
-    date: '2026-06-13',
+    date: TODAY,
     status: 'pending',
-    createdAt: '2026-06-12T08:00:00Z',
+    createdAt: new Date().toISOString(),
   },
   {
     id: '3',
@@ -58,9 +68,9 @@ let mockTasks = [
     endTime: '16:00',
     location: '西西弗书店',
     note: '带上速写本',
-    date: '2026-06-13',
+    date: TODAY,
     status: 'pending',
-    createdAt: '2026-06-12T08:00:00Z',
+    createdAt: new Date().toISOString(),
   },
   {
     id: '4',
@@ -70,9 +80,9 @@ let mockTasks = [
     endTime: '',
     location: '下沙市场',
     note: '',
-    date: '2026-06-13',
+    date: TODAY,
     status: 'pending',
-    createdAt: '2026-06-12T08:00:00Z',
+    createdAt: new Date().toISOString(),
   },
   {
     id: '5',
@@ -82,9 +92,9 @@ let mockTasks = [
     endTime: '11:00',
     location: '',
     note: '需要部门经理审核',
-    date: '2026-06-14',
+    date: TOMORROW,
     status: 'completed',
-    createdAt: '2026-06-11T08:00:00Z',
+    createdAt: new Date().toISOString(),
   },
 ];
 
@@ -184,8 +194,8 @@ export const getTasks = async (date) => {
     if (date) {
       tasks = tasks.filter(t => t.date === date);
     }
-    // 按开始时间排序
-    tasks.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    // 按开始时间排序（空时间排到末尾）
+    tasks.sort((a, b) => (a.startTime || '99:99').localeCompare(b.startTime || '99:99'));
     return formatResponse(true, tasks);
   }
   try {

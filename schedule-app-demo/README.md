@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-基于 React Native + Expo 的日程管理移动应用，对应课程 Day2 阶段作业2 的全部要求。
+基于 **React Native 0.81 + Expo SDK 54 + React 19** 的日程管理移动应用，对应课程 Day2 阶段作业2 的全部要求，原型源自 `阶段作业/1.页面原型`。
 
 ## 项目结构
 
@@ -23,6 +23,8 @@ schedule-app-demo/
     ├── screens/                    # 页面组件
     │   ├── TaskListScreen.js       # 任务列表页（首页）
     │   ├── AddTaskScreen.js        # 添加任务页（表单）
+    │   ├── CalendarScreen.js       # 日历页（Tab）
+    │   ├── ContactsScreen.js       # 通讯页（Tab）
     │   └── ProfileScreen.js        # 我的页面
     ├── components/                 # 通用组件
     │   ├── TabIcon.js             # Tab 图标
@@ -91,20 +93,31 @@ schedule-app-demo/
 
 ## 快速启动
 
+> 已升级到 **Expo SDK 54**（React Native 0.81 + React 19）。如果之前装过旧的 `node_modules`，请先删除再重新安装。
+
 ```bash
 # 1. 进入项目目录
 cd schedule-app-demo
 
-# 2. 安装依赖
+# 2. 清理旧的依赖（仅升级时需要）
+rm -rf node_modules package-lock.json   # Windows: rmdir /s /q node_modules && del package-lock.json
+
+# 3. 安装依赖
 npm install
 
-# 3. 启动 Expo
+# 4. 校准与 SDK 54 兼容的版本（推荐）
+npx expo install --fix
+
+# 5. 启动 Expo
 npx expo start
 
-# 4. 扫描二维码在手机上运行（需安装 Expo Go）
+# 6. 扫描二维码在手机上运行（需要安装 Expo Go SDK 54 版本）
 # 或按 'a' 启动 Android 模拟器
 # 或按 'i' 启动 iOS 模拟器
+# 或按 'w' 在浏览器查看 web 版
 ```
+
+> ⚠️ Expo Go 在每次大版本升级后需更新到对应 SDK 版本。手机端如果是旧版 Expo Go，请先到应用商店升级。
 
 ## 联调后端
 
