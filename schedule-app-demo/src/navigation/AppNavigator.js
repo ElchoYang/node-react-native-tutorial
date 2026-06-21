@@ -4,14 +4,18 @@
  * 演示知识点:
  * - @react-navigation/native NavigationContainer
  * - @react-navigation/bottom-tabs createBottomTabNavigator
- * - @react-navigation/native-stack createNativeStackNavigator
  * - tabBarOptions / screenOptions 配置
  * - headerShown 控制顶部导航栏
+ *
+ * 与原型对应:
+ *  - 「任务」Tab → 添加任务页 AddTaskScreen
+ *  - 「日历」Tab → 任务列表页 TaskListScreen（带日期切换）
+ *  - 「通讯」Tab → 通讯录 ContactsScreen
+ *  - 「我的」Tab → ProfileScreen
  */
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 // 自定义 Tab 图标组件
 import TabIcon from '../components/TabIcon';
@@ -20,7 +24,6 @@ import TabIcon from '../components/TabIcon';
 import TaskListScreen from '../screens/TaskListScreen';
 import AddTaskScreen from '../screens/AddTaskScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import CalendarScreen from '../screens/CalendarScreen';
 import ContactsScreen from '../screens/ContactsScreen';
 
 // ============ 底部 Tab 导航器 ============
@@ -34,8 +37,9 @@ const Tab = createBottomTabNavigator();
 function BottomTabNavigator() {
   return (
     <Tab.Navigator
+      initialRouteName="日历"
       screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
+        tabBarIcon: ({ focused }) => {
           // 根据路由名称匹配图标
           let iconName;
           switch (route.name) {
@@ -70,43 +74,21 @@ function BottomTabNavigator() {
         headerShown: false, // 不显示顶部导航栏，页面内部自定义
       })}
     >
-      <Tab.Screen name="任务" component={TaskListScreen} />
-      <Tab.Screen name="日历" component={CalendarScreen} />
+      <Tab.Screen name="任务" component={AddTaskScreen} />
+      <Tab.Screen name="日历" component={TaskListScreen} />
       <Tab.Screen name="通讯" component={ContactsScreen} />
       <Tab.Screen name="我的" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
 
-// ============ 栈导航器（用于模态页面跳转） ============
-
-const Stack = createNativeStackNavigator();
-
 /**
  * AppNavigator —— 整体导航容器
- * 底部Tab为主导航，添加任务页面为模态栈页面
  */
 function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
-        <Stack.Screen
-          name="AddTask"
-          component={AddTaskScreen}
-          options={{
-            presentation: 'modal',   // 模态弹出样式
-            headerShown: true,
-            headerTitle: '添加任务',
-            headerTitleStyle: {
-              fontSize: 18,
-              fontWeight: '600',
-              color: '#333333',
-            },
-            headerTintColor: '#4080FF',
-          }}
-        />
-      </Stack.Navigator>
+      <BottomTabNavigator />
     </NavigationContainer>
   );
 }

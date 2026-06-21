@@ -103,12 +103,16 @@ export default function TaskListScreen({ navigation, route }) {
     <ScheduleItem
       task={item}
       onToggle={toggleStatus}
+      onDelete={removeTask}
       onPress={(task) => {
-        Alert.alert('任务详情', `${task.title}\n${task.note || '无备注'}`, [
-          { text: '删除', style: 'destructive', onPress: () => removeTask(task.id) },
-          { text: '编辑', style: 'default' },
-          { text: '关闭', style: 'cancel' },
-        ]);
+        // 点击主体显示任务详情
+        const content = [
+          `分类: #${task.category}`,
+          `时间: ${task.startTime}${task.endTime ? '-' + task.endTime : ''}`,
+          task.location ? `地点: ${task.location}` : null,
+          task.note ? `备注: ${task.note}` : null,
+        ].filter(Boolean).join('\n');
+        Alert.alert(task.title, content || '无更多信息');
       }}
     />
   ), [toggleStatus, removeTask]);
@@ -118,9 +122,9 @@ export default function TaskListScreen({ navigation, route }) {
    */
   const keyExtractor = useCallback((item) => item.id, []);
 
-  /** 跳转添加任务页面 */
+  /** 跳转到「任务」Tab（添加任务页） */
   const goToAddTask = useCallback(() => {
-    navigation.navigate('AddTask', { date: selectedDate });
+    navigation.navigate('任务', { date: selectedDate });
   }, [navigation, selectedDate]);
 
   return (

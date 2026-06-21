@@ -86,14 +86,21 @@ const styles = StyleSheet.create({
   },
   tabItem: {
     minWidth: 52,
+    minHeight: 64,                 // 固定最小高度，避免活动态高度坍缩
     alignItems: 'center',
+    justifyContent: 'flex-start',
     paddingVertical: 8,
     paddingHorizontal: 10,
-    borderRadius: 6,
+    borderRadius: 8,
     marginHorizontal: 3,
   },
   tabItemActive: {
     backgroundColor: '#4080FF',
+    shadowColor: 'rgba(64, 128, 255, 0.3)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   monthLabel: {
     fontSize: 12,

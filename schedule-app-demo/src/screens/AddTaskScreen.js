@@ -8,12 +8,13 @@
  * - 输入验证
  * - ScrollView 表单滚动
  * - TouchableOpacity 分类选择
- * - navigation.goBack() 返回上一页
- * - route.params 接收页面参数
+ * - useFocusEffect 监听 Tab 切换/聚焦
  * - Alert 提示
+ *
+ * 作为底部「任务」Tab 直接渲染（无模态导航）。
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -31,36 +32,102 @@ import {
 // 常量
 import { CATEGORIES, getCategoryColor } from '../constants/categories';
 
+// 组件
+import TimePicker from '../components/TimePicker';
+
 // 导入 API
 import { createTask } from '../services/api';
 
+/** 今天的 YYYY-MM-DD */
+const todayKey = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 export default function AddTaskScreen({ navigation, route }) {
-  // 从路由参数获取默认日期
-  const initialDate = route.params?.date || new Date().toISOString().slice(0, 10);
+  // 默认日期：路由参数 > 今天
+  const initialDate = route?.params?.date || todayKey();
 
   // ============ useState —— 多个表单字段 ============
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('work');
+  const [category, setCategory] = useState(null);   // 必填 —— 默认未选
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [location, setLocation] = useState('');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});         // 字段级错误信息
+
+  /** 清除单个字段错误（用户开始修改后即清掉提示） */
+  const clearError = useCallback((field) => {
+    setErrors(prev => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }, []);
+
+  /** 包装 setter —— 修改字段同时清除该字段错误 */
+  const onTitleChange = useCallback((v) => { setTitle(v); clearError('title'); }, [clearError]);
+  const onCategoryChange = useCallback((v) => { setCategory(v); clearError('category'); }, [clearError]);
+  const onStartTimeChange = useCallback((v) => { setStartTime(v); clearError('startTime'); clearError('time'); }, [clearError]);
+  const onEndTimeChange = useCallback((v) => { setEndTime(v); clearError('endTime'); clearError('time'); }, [clearError]);
+  const onLocationChange = useCallback((v) => { setLocation(v); clearError('location'); }, [clearError]);
+
+  /** 重置表单字段 */
+  const resetForm = useCallback(() => {
+    setTitle('');
+    setCategory(null);
+    setStartTime('');
+    setEndTime('');
+    setLocation('');
+    setNote('');
+    setErrors({});
+  }, []);
+
+  /** 切换到日历 Tab 并触发刷新 */
+  const goToCalendarWithRefresh = useCallback(() => {
+    navigation.navigate('日历', { refreshAt: Date.now() });
+  }, [navigation]);
+
+  /** 取消按钮：清空表单并跳到日历 */
+  const handleCancel = useCallback(() => {
+    resetForm();
+    navigation.navigate('日历');
+  }, [resetForm, navigation]);
+
+  /**
+   * 校验所有必填项 —— 一次性收集每个字段的错误信息
+   * 演示: 字段级表单校验
+   */
+  const validate = useCallback(() => {
+    const e = {};
+    if (!title.trim()) e.title = '请输入任务标题';
+    if (!category) e.category = '请选择任务分类';
+    if (!startTime.trim()) e.startTime = '请选择开始时间';
+    if (!endTime.trim()) e.endTime = '请选择结束时间';
+    // 时间逻辑校验：结束 > 开始（仅在两端都填写后判断）
+    if (startTime && endTime && endTime <= startTime) {
+      e.time = '结束时间必须晚于开始时间';
+    }
+    if (!location.trim()) e.location = '请输入任务地点';
+    return e;
+  }, [title, category, startTime, endTime, location]);
 
   /**
    * 保存任务
    * 演示：输入验证 + async/await + 接口调用
    */
   const handleSave = useCallback(async () => {
-    // 输入验证
-    if (!title.trim()) {
-      Alert.alert('提示', '请输入任务标题');
+    const e = validate();
+    if (Object.keys(e).length > 0) {
+      setErrors(e);
+      // 顶部仍提示总数，引导用户向下查看
+      Alert.alert('请检查表单', `还有 ${Object.keys(e).length} 项未填写或不正确`);
       return;
     }
-    if (!startTime.trim()) {
-      Alert.alert('提示', '请输入开始时间');
-      return;
-    }
+    setErrors({});
 
     setSubmitting(true);
     try {
@@ -75,22 +142,9 @@ export default function AddTaskScreen({ navigation, route }) {
       });
 
       if (res.success) {
-        Alert.alert('成功', '任务保存成功！', [
-          {
-            text: '好的',
-            onPress: () => {
-              // 通过 navigate 回传 refreshAt 触发列表刷新
-              navigation.navigate({
-                name: 'MainTabs',
-                params: {
-                  screen: '任务',
-                  params: { refreshAt: Date.now() },
-                },
-                merge: true,
-              });
-            },
-          },
-        ]);
+        // 直接跳回日历（任务列表）页，不再用 Alert 阻塞
+        resetForm();
+        goToCalendarWithRefresh();
       } else {
         Alert.alert('失败', res.message || '保存失败，请重试');
       }
@@ -99,26 +153,7 @@ export default function AddTaskScreen({ navigation, route }) {
     } finally {
       setSubmitting(false);
     }
-  }, [title, category, startTime, endTime, location, note, initialDate, navigation]);
-
-  /**
-   * 右上角保存按钮
-   */
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity
-          onPress={handleSave}
-          disabled={submitting}
-          style={styles.headerBtn}
-        >
-          <Text style={[styles.headerBtnText, submitting && styles.headerBtnDisabled]}>
-            {submitting ? '保存中...' : '完成'}
-          </Text>
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, handleSave, submitting]);
+  }, [validate, title, category, startTime, endTime, location, note, initialDate, resetForm, goToCalendarWithRefresh]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -126,8 +161,27 @@ export default function AddTaskScreen({ navigation, route }) {
 
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+        {/* ====== 顶部导航（页面内置） ====== */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleCancel} style={styles.headerBtnLeft}>
+            <Text style={styles.headerBtnText}>取消</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.headerTitle}>添加任务</Text>
+
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={submitting}
+            style={styles.headerBtnRight}
+          >
+            <Text style={[styles.headerBtnText, submitting && styles.headerBtnDisabled]}>
+              {submitting ? '保存中...' : '完成'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -136,21 +190,25 @@ export default function AddTaskScreen({ navigation, route }) {
         >
           {/* ====== 任务标题 ====== */}
           <View style={styles.formItem}>
-            <Text style={styles.formLabel}>任务标题</Text>
+            <Text style={styles.formLabel}>
+              任务标题 <Text style={styles.required}>*</Text>
+            </Text>
             <TextInput
-              style={styles.formInput}
+              style={[styles.formInput, errors.title && styles.formInputError]}
               value={title}
-              onChangeText={setTitle}      // 受控组件 —— value + onChangeText 数据绑定
+              onChangeText={onTitleChange}     // 受控组件 + 错误清除
               placeholder="请输入任务标题"
               placeholderTextColor="#CCCCCC"
               maxLength={50}
-              autoFocus                  // 自动聚焦
             />
+            {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
           </View>
 
           {/* ====== 任务分类 ====== */}
           <View style={styles.formItem}>
-            <Text style={styles.formLabel}>任务分类</Text>
+            <Text style={styles.formLabel}>
+              任务分类 <Text style={styles.required}>*</Text>
+            </Text>
             <View style={styles.cateGroup}>
               {CATEGORIES.map((cat) => {
                 const isSelected = category === cat.key;
@@ -163,54 +221,59 @@ export default function AddTaskScreen({ navigation, route }) {
                       // 条件样式 —— 选中态
                       isSelected && styles.cateItemSelected,
                     ]}
-                    onPress={() => setCategory(cat.key)}
+                    onPress={() => onCategoryChange(cat.key)}
                   >
                     <Text style={styles.cateText}>{cat.label}</Text>
-                    {isSelected && (
-                      <Text style={styles.cateCheck}>✓</Text>
-                    )}
+                    {isSelected && <Text style={styles.cateCheck}>✓</Text>}
                   </TouchableOpacity>
                 );
               })}
             </View>
+            {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
           </View>
 
-          {/* ====== 时间选择 ====== */}
+          {/* ====== 时间选择（下拉） ====== */}
           <View style={styles.timeRow}>
             <View style={styles.timeItem}>
-              <Text style={styles.formLabel}>开始时间</Text>
-              <TextInput
-                style={styles.formInput}
+              <Text style={styles.formLabel}>
+                开始时间 <Text style={styles.required}>*</Text>
+              </Text>
+              <TimePicker
                 value={startTime}
-                onChangeText={setStartTime}
-                placeholder="08:00"
-                placeholderTextColor="#CCCCCC"
-                keyboardType="numbers-and-punctuation"
+                onChange={onStartTimeChange}
+                placeholder="选择开始时间"
+                error={!!errors.startTime}
               />
+              {errors.startTime && <Text style={styles.errorText}>{errors.startTime}</Text>}
             </View>
             <View style={styles.timeItem}>
-              <Text style={styles.formLabel}>结束时间</Text>
-              <TextInput
-                style={styles.formInput}
+              <Text style={styles.formLabel}>
+                结束时间 <Text style={styles.required}>*</Text>
+              </Text>
+              <TimePicker
                 value={endTime}
-                onChangeText={setEndTime}
-                placeholder="10:00"
-                placeholderTextColor="#CCCCCC"
-                keyboardType="numbers-and-punctuation"
+                onChange={onEndTimeChange}
+                placeholder="选择结束时间"
+                error={!!errors.endTime}
               />
+              {errors.endTime && <Text style={styles.errorText}>{errors.endTime}</Text>}
             </View>
           </View>
+          {errors.time && <Text style={[styles.errorText, styles.errorRow]}>{errors.time}</Text>}
 
           {/* ====== 任务地点 ====== */}
           <View style={styles.formItem}>
-            <Text style={styles.formLabel}>任务地点</Text>
+            <Text style={styles.formLabel}>
+              任务地点 <Text style={styles.required}>*</Text>
+            </Text>
             <TextInput
-              style={styles.formInput}
+              style={[styles.formInput, errors.location && styles.formInputError]}
               value={location}
-              onChangeText={setLocation}
+              onChangeText={onLocationChange}
               placeholder="请输入地点"
               placeholderTextColor="#CCCCCC"
             />
+            {errors.location && <Text style={styles.errorText}>{errors.location}</Text>}
           </View>
 
           {/* ====== 任务备注 ====== */}
@@ -220,7 +283,7 @@ export default function AddTaskScreen({ navigation, route }) {
               style={[styles.formInput, styles.textArea]}
               value={note}
               onChangeText={setNote}
-              placeholder="请输入备注内容"
+              placeholder="请输入备注内容（选填）"
               placeholderTextColor="#CCCCCC"
               multiline               // 多行输入
               textAlignVertical="top"
@@ -254,6 +317,39 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+  // 顶部导航
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 50,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+    backgroundColor: '#FFFFFF',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333333',
+  },
+  headerBtnLeft: {
+    minWidth: 50,
+    alignItems: 'flex-start',
+  },
+  headerBtnRight: {
+    minWidth: 50,
+    alignItems: 'flex-end',
+  },
+  headerBtnText: {
+    fontSize: 16,
+    color: '#4080FF',
+    fontWeight: '500',
+  },
+  headerBtnDisabled: {
+    color: '#A0BFFF',
+  },
+  // 表单
   scrollView: {
     flex: 1,
   },
@@ -269,6 +365,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
     marginBottom: 8,
+  },
+  required: {
+    color: '#FF4444',
+    fontSize: 14,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#FF4444',
+    marginTop: 6,
+  },
+  errorRow: {
+    marginTop: -10,
+    marginBottom: 12,
+  },
+  formInputError: {
+    borderColor: '#FF4444',
+    backgroundColor: '#FFF5F5',
   },
   formInput: {
     width: '100%',
@@ -342,17 +455,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
     fontWeight: '600',
-  },
-  // 顶部按钮
-  headerBtn: {
-    marginRight: 15,
-  },
-  headerBtnText: {
-    fontSize: 16,
-    color: '#4080FF',
-    fontWeight: '500',
-  },
-  headerBtnDisabled: {
-    color: '#A0BFFF',
   },
 });

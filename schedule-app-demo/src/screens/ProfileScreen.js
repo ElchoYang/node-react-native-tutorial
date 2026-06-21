@@ -110,11 +110,20 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* ====== 顶部导航 ====== */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>我的</Text>
-          <TouchableOpacity onPress={() => Alert.alert('更多', '功能开发中')}>
+          <TouchableOpacity
+            style={styles.headerMore}
+            onPress={() => Alert.alert('更多', '该功能开发中，敬请期待。')}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            activeOpacity={0.6}
+          >
             <Ionicons name="ellipsis-vertical" size={22} color="#333333" />
           </TouchableOpacity>
         </View>
@@ -164,7 +173,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingBottom: 80,
+  },
+  scrollContent: {
+    paddingBottom: 40,   // 给 Tab Bar 留空间，最后一项「帮助中心」不再被遮
   },
   header: {
     flexDirection: 'row',
@@ -180,6 +191,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#333333',
+  },
+  headerMore: {
+    position: 'absolute',
+    right: 16,
+    top: 0,
+    bottom: 0,
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   // 用户信息
   userInfo: {
